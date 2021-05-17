@@ -48,7 +48,7 @@ scriptRun:
 	./$(SCRIPTS) $(INFILE) $(INDIR) $(NUMBER)
 
 valgrind:
-	valgrind -s --leak-check=full --show-leak-kinds=all --show-reachable=yes --trace-children=yes --track-origins=yes ./$(TARGET) -m $(NUMBER) -b $(BUFFSZ) -s $(BLOOMSZ) -i $(INDIR)
+	valgrind --leak-check=full --show-leak-kinds=all --show-reachable=yes --trace-children=yes --track-origins=yes ./$(TARGET) -m $(NUMBER) -b $(BUFFSZ) -s $(BLOOMSZ) -i $(INDIR)
 
 help:
 	@echo Options:
