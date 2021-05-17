@@ -12,7 +12,7 @@ void writeLogFile(List<std::string> countryList, std::string dirName,
     fileName.append(toString(getpid()));
     struct stat buf;
     if (stat(dirName.c_str(), &buf))
-        if (mkdir(dirName.c_str(), permissions) < 0) {
+        if (mkdir(dirName.c_str(), permissions) < 0 && errno != EEXIST) {
             perror("writeLogFile/mkdir");
             exit(30);
         }
