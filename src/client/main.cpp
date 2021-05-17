@@ -364,6 +364,7 @@ int main(int argc, char *argv[]) {
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGQUIT, &sa, NULL);
     sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
 
     // ========== Communication installation START ==========
 
@@ -412,19 +413,24 @@ int main(int argc, char *argv[]) {
 
     do {
 
-        buffer = receivePackets(fdRead, bufferSize);
-        line.assign(buffer);
-        delete[] buffer;
-        splitLine(line, args);
-        if (isInt(args.getFirst())) {
-            option = myStoi(args.getFirst());
-            args.popFirst();
-        }
-
+        // Wait for a signal
+        pause();
         // Detect SIGUSR1
         if (newFilesAdded) option = addRecords;
+        // Detect SIGUSR2
+        else if (newCommand) {
+            buffer = receivePackets(fdRead, bufferSize);
+            line.assign(buffer);
+            delete[] buffer;
+            splitLine(line, args);
+            if (isInt(args.getFirst())) {
+                option = myStoi(args.getFirst());
+                args.popFirst();
+            }
+        }
         // Detect SIGINT/SIGQUIT
-        if (shutDown) option = exitProgram;
+        else if (shutDown) option = exitProgram;
+        else continue;
 
         switch (option) {
 
@@ -523,6 +529,9 @@ int main(int argc, char *argv[]) {
             default:
                 break;
         }
+
+        // Reset the newCommand flag
+        newCommand = false;
 
     } while (option);
 
