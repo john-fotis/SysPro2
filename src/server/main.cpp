@@ -327,6 +327,8 @@ int main(int argc, char *argv[]) {
                 reqAnswer = virusPtr->checkBloom(args.getFirst());
                 if (!reqAnswer) std::cout << COUT_REQ_REJECTED;
                 else {
+                    // Inform the monitor that a new command is following
+                    kill(monitorPtr->PID(), SIGUSR2);
                     reqAnswer = false;
                     // Promote the request to monitorPtr
                     // Message format: [QUERY-CODE] ["REQUEST"] [ID] [COUNTRY] [VIRUS]
@@ -369,6 +371,7 @@ int main(int argc, char *argv[]) {
                 registryPtr->addRequest(request);
 
                 // Inform the monitor about the request result
+                kill(monitorPtr->PID(), SIGUSR2);
                 line.assign(toString(travelRequest) + " ");
                 reqAnswer ? line.append(ACCEPTED) : line.append(REJECTED);
                 sendPackets(monitorPtr->fdW(), line.c_str(), line.length()+1, bufferSize);
@@ -451,8 +454,6 @@ int main(int argc, char *argv[]) {
 
                 // Notify the responsible monitor
                 kill(monitorPtr->PID(), SIGUSR1);
-                // Send an invalid code to unblock the client from reading 
-                sendPackets(monitorPtr->fdW(), INV_CODE, sizeof(INV_CODE), bufferSize);
 
                 // Check if the monitor actually found new records
                 buffer = receivePackets(monitorPtr->fdR(), bufferSize);
@@ -479,6 +480,7 @@ int main(int argc, char *argv[]) {
                 // They will either reply with ["404"] (not found) or the user data
                 for (unsigned int mon = 0; mon < monitorList.getSize(); mon++) {
                     monitorPtr = monitorList.getNode(mon);
+                    kill(monitorPtr->PID(), SIGUSR2);
                     buffer = receivePackets(monitorPtr->fdR(), bufferSize);
                     line.assign(buffer);
                     delete[] buffer;
@@ -527,8 +529,10 @@ int main(int argc, char *argv[]) {
 
     // Give exit command to all monitors
     line.assign(toString(exitProgram));
-    for (unsigned int mon = 0; mon < monitorList.getSize(); mon++)
+    for (unsigned int mon = 0; mon < monitorList.getSize(); mon++) {
+        kill(monitorList.getNode(mon)->PID(), SIGUSR2);
         sendPackets(monitorList.getNode(mon)->fdW(), line.c_str(), line.length()+1, bufferSize);
+    }
 
     // Wait for all Monitors to finish
     for (unsigned int mon = 0; mon < monitorList.getSize(); mon++)
