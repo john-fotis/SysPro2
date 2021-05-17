@@ -67,7 +67,6 @@ typedef std::string string;
 #define REJECTED "REJECTED"
 #define UPDATE "UPDATE"
 #define NOT_FOUND "404"
-#define INV_CODE "-1"
 
 // Server error codes
 enum serverErrors {
