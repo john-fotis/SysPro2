@@ -81,7 +81,6 @@ void reviveChild(List<MonitorInfo> &monitorList, List<VirusRegistry> &virusList,
 
     // Find out which child died
     childPid = waitpid(-1, &status, WNOHANG);
-    std::cout << MONITOR_STOPPED(childPid);
     monitor.setPID(childPid);
     monitorPtr = monitorList.search(monitor);
     // Close the fifo files of this monitor
@@ -331,10 +330,11 @@ int main(int argc, char *argv[]) {
                     // Promote the request to monitorPtr
                     // Message format: [QUERY-CODE] ["REQUEST"] [ID] [COUNTRY] [VIRUS]
                     line.assign(toString(travelRequest) + " ");
-                    line.append(toString(REQUEST) + " ");
                     line.append(args.getFirst() + " ");
                     line.append(args.getLast());
 
+                    // Inform the monitor that a new command is following
+                    kill(monitorPtr->PID(), SIGUSR2);
                     sendPackets(monitorPtr->fdW(), line.c_str(), line.length()+1, bufferSize);
                     buffer = receivePackets(monitorPtr->fdR(), bufferSize);
                     line.assign(buffer);
@@ -349,10 +349,10 @@ int main(int argc, char *argv[]) {
                         else if (date1.daysDifference(date2) >= (6*DAYS_PER_MONTH))
                             std::cout << COUT_REQ_REJECTED2;
                         else {
-                            std::cout << COUT_REQ_ACCEPTED;
                             reqAnswer = true;
+                            std::cout << COUT_REQ_ACCEPTED;
                         }
-                    } else std::cerr << UNKNOWN_ERROR;
+                    } else { std::cerr << UNKNOWN_ERROR; break; }
                 }
 
                 // Update counters
@@ -367,11 +367,6 @@ int main(int argc, char *argv[]) {
                     registryPtr = registryList.search(registry);
                 }
                 registryPtr->addRequest(request);
-
-                // Inform the monitor about the request result
-                line.assign(toString(travelRequest) + " ");
-                reqAnswer ? line.append(ACCEPTED) : line.append(REJECTED);
-                sendPackets(monitorPtr->fdW(), line.c_str(), line.length()+1, bufferSize);
                 break;
 
             case travelStats:
@@ -451,8 +446,6 @@ int main(int argc, char *argv[]) {
 
                 // Notify the responsible monitor
                 kill(monitorPtr->PID(), SIGUSR1);
-                // Send an invalid code to unblock the client from reading 
-                sendPackets(monitorPtr->fdW(), INV_CODE, sizeof(INV_CODE), bufferSize);
 
                 // Check if the monitor actually found new records
                 buffer = receivePackets(monitorPtr->fdR(), bufferSize);
@@ -479,6 +472,7 @@ int main(int argc, char *argv[]) {
                 // They will either reply with ["404"] (not found) or the user data
                 for (unsigned int mon = 0; mon < monitorList.getSize(); mon++) {
                     monitorPtr = monitorList.getNode(mon);
+                    kill(monitorPtr->PID(), SIGUSR2);
                     buffer = receivePackets(monitorPtr->fdR(), bufferSize);
                     line.assign(buffer);
                     delete[] buffer;
@@ -516,7 +510,7 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-    } while (option && !shutDown);
+    } while (option);
   
     // =========== Shut down ===========
 
@@ -525,12 +519,12 @@ int main(int argc, char *argv[]) {
     // Save the request statistics in log files
     writeLogFile(countryList, toString(LOG_FILES), PERMS, acceptedReqs, rejectedReqs);
 
-    // Give exit command to all monitors
+    // Terminate all monitors
     line.assign(toString(exitProgram));
     for (unsigned int mon = 0; mon < monitorList.getSize(); mon++)
-        sendPackets(monitorList.getNode(mon)->fdW(), line.c_str(), line.length()+1, bufferSize);
+        kill(monitorList.getNode(mon)->PID(), SIGKILL);
 
-    // Wait for all Monitors to finish
+    // Wait for all Monitors to finish and deallocate their resources
     for (unsigned int mon = 0; mon < monitorList.getSize(); mon++)
         waitpid(monitorList.getNode(mon)->PID(), NULL, 0);
 
