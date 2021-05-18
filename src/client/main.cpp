@@ -341,7 +341,6 @@ int main(int argc, char *argv[]) {
 
     // ========== Variables ==========
 
-    int exitStatus = 0;
     unsigned int bufferSize = 0, bloomSize = 0;
     unsigned totalInc = 0, totalDup = 0, totalRecs = 0;
     string line;
@@ -364,6 +363,7 @@ int main(int argc, char *argv[]) {
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGQUIT, &sa, NULL);
     sigaction(SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
 
     // ========== Communication installation START ==========
 
@@ -374,10 +374,10 @@ int main(int argc, char *argv[]) {
     // 3rd message contains all the subfolders we need to read
     buffer = receivePackets(fdRead, bufferSize);
     line.assign(buffer);
+    delete[] buffer;
     // Extract all the folders we need to read
     splitLine(line, folders);
     initFileList(folders, fileList);
-    delete[] buffer;
 
     // ========== Create and initialize app resources ==========
     // Keeps all necessary info for a record
@@ -412,48 +412,58 @@ int main(int argc, char *argv[]) {
 
     do {
 
-        buffer = receivePackets(fdRead, bufferSize);
-        line.assign(buffer);
-        delete[] buffer;
-        splitLine(line, args);
-        if (isInt(args.getFirst())) {
-            option = myStoi(args.getFirst());
-            args.popFirst();
-        }
-
+        // Wait for a signal
+        pause();
         // Detect SIGUSR1
-        if (newFilesAdded) option = addRecords;
+        if (newFilesAdded) {
+            // Reset the flag
+            newFilesAdded = false;
+            option = addRecords;
+        }
+        // Detect SIGUSR2
+        else if (newCommand) {
+            // Reset the flag
+            newCommand = false;
+            buffer = receivePackets(fdRead, bufferSize);
+            line.assign(buffer);
+            delete[] buffer;
+            splitLine(line, args);
+            if (isInt(args.getFirst())) {
+                option = myStoi(args.getFirst());
+                args.popFirst();
+            }
+        }
         // Detect SIGINT/SIGQUIT
-        if (shutDown) option = exitProgram;
+        else if (shutDown) {
+            shutDown = false;
+            option = exitProgram;
+        }
+        else continue;
 
         switch (option) {
 
             case travelRequest:
 
-                // Possible message types are: "REQUEST" - "ACCEPTED" - "REJECTED"
-                request = false;
-                if (args.getFirst().compare(REQUEST)) {
-                    // This is an update ["ACCEPTED"] or ["REJECTED"]
-                    !args.getFirst().compare(ACCEPTED) ? acceptedReqs++ : rejectedReqs++;
-                } else {
-                    // Server is requesting in format: ["REQUEST"] [citizenID] [virus]
-                    recInfo.idStr.assign(*args.getNode(1));
-                    obj.record.setID(myStoi(recInfo.idStr));
-                    recInfo.virusName.assign(*args.getNode(2));
-                    obj.virus.setName(recInfo.virusName);
-                    virusPtr = db.virusList.search(obj.virus);
-                    if (virusPtr) {
-                        recordPtr = virusPtr->searchVaccinatedList(obj.record);
-                        if (recordPtr) {
-                            request = true;
-                            obj.date1 = recordPtr->getDate();
-                        }
+                // Server is requesting in format: [citizenID] [virus]
+                recInfo.idStr.assign(args.getFirst());
+                obj.record.setID(myStoi(recInfo.idStr));
+                recInfo.virusName.assign(args.getLast());
+                obj.virus.setName(recInfo.virusName);
+                virusPtr = db.virusList.search(obj.virus);
+                if (virusPtr) {
+                    recordPtr = virusPtr->searchVaccinatedList(obj.record);
+                    if (recordPtr) {
+                        request = true;
+                        obj.date1 = recordPtr->getDate();
                     }
-
-                    // Send the result to the back server
-                    request ? line.assign("YES " + toString(obj.date1)) : line.assign("NO");
-                    sendPackets(fdWrite, line.c_str(), line.length()+1, bufferSize);
                 }
+
+                // Update local counters
+                request ? acceptedReqs++ : rejectedReqs++;
+                
+                // Send the result to the back server
+                request ? line.assign("YES " + toString(obj.date1)) : line.assign("NO");
+                sendPackets(fdWrite, line.c_str(), line.length()+1, bufferSize);
                 break;
 
             case travelStats:
@@ -470,7 +480,6 @@ int main(int argc, char *argv[]) {
 
                 if (newFileList.empty()) {
                     sendPackets(fdWrite, NOT_FOUND, sizeof(NOT_FOUND), bufferSize);
-                    newFilesAdded = false;
                     break;
                 } else sendPackets(fdWrite, UPDATE, sizeof(UPDATE), bufferSize);
 
@@ -484,9 +493,6 @@ int main(int argc, char *argv[]) {
                 for (unsigned int file = 0; file < newFileList.getSize(); file++)
                     fileList.insertAscending(*newFileList.getNode(file));
                 newFileList.flush();
-                
-                // Reset the flag
-                newFilesAdded = false;
                 break;
 
             case searchStatus:
@@ -523,7 +529,6 @@ int main(int argc, char *argv[]) {
             default:
                 break;
         }
-
     } while (option);
 
     for (unsigned int i = 0; i < db.countryList.getSize(); i++)
@@ -536,9 +541,6 @@ int main(int argc, char *argv[]) {
 
     fifoClose(fdRead);
     fifoClose(fdWrite);
-
-    if ((WEXITSTATUS(exitStatus)))
-        std::cout << EXIT_CODE_FROM(getpid(), WEXITSTATUS(exitStatus)) << std::endl;
 
     return 0;
 }
