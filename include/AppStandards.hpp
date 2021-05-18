@@ -27,7 +27,7 @@ typedef std::string string;
 #define NOT_ENOUGH_RESOURCES(DIR) " because of insufficient number of sub-directories in " << DIR
 #define MONITOR_STARTED(PID) "Monitor " << PID << " is up.\n"
 #define MONITOR_STOPPED(PID) "Monitor " << PID << " is down.\n"
-#define MONITOR_REPLACE(OLD, NEW) "\nReplacing Monitor " << OLD << " with " << NEW << "...\n"
+#define MONITOR_REPLACE(OLD, NEW) "Replacing Monitor " << OLD << " with " << NEW << "...\n"
 #define MONITOR_ERROR(PID) "\nAn error occurred with monitor #" << PID
 #define SPOILER "\nType /help to display the available options or /exit to exit the application.\n\n"
 #define LOG_FILES_SAVED(PATH) "\nlog-files have been stored in " << PATH << "\n\n"
@@ -67,7 +67,6 @@ typedef std::string string;
 #define REJECTED "REJECTED"
 #define UPDATE "UPDATE"
 #define NOT_FOUND "404"
-#define INV_CODE "-1"
 
 // Server error codes
 enum serverErrors {
