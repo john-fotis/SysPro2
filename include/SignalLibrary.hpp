@@ -4,6 +4,7 @@
 #include <csignal>
 #include <iostream>
 
+volatile sig_atomic_t newCommand = false;
 volatile sig_atomic_t childDied = false;
 volatile sig_atomic_t shouldRespawn = true;
 volatile sig_atomic_t newFilesAdded = false;
@@ -24,8 +25,11 @@ void signalHandler(int signo) {
         case SIGUSR1:
             newFilesAdded = true;
             return;
+        case SIGUSR2:
+            newCommand = true;
+            break;
         default:
-            std::cout.write("Uknown Signal caught", sizeof("Uknown Signal caught"));
+            std::cout.write("Uknown Signal caught\n", sizeof("Uknown Signal caught\n"));
             return;
     }
 }
