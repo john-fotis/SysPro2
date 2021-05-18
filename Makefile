@@ -1,5 +1,5 @@
 # ========== Run "make help" to see the available commands ==========
-CODE	= $$PWD/src
+CODE	= src
 SERVER	= $(CODE)/server
 CLIENT	= $(CODE)/client
 COMMON	= $(CODE)/common
@@ -14,10 +14,10 @@ SCRIPTS	= create_infiles.sh
 BUFFSZ	= 64
 NUMBER	= 9
 BLOOMSZ	= 1000
-INDIR	= $$PWD/input_dir/
+INDIR	= input_dir/
 INFILE	= citizenRecordsFile
-BINDIR	= $$PWD/bin/
-LOGDIR	= $$PWD/logs/
+BINDIR	= bin/
+LOGDIR	= logs/
 
 all:
 	$(MAKE) -C $(SERVER)
@@ -48,7 +48,7 @@ scriptRun:
 	./$(SCRIPTS) $(INFILE) $(INDIR) $(NUMBER)
 
 valgrind:
-	valgrind -s --leak-check=full --show-leak-kinds=all --show-reachable=yes --trace-children=yes --track-origins=yes ./$(TARGET) -m $(NUMBER) -b $(BUFFSZ) -s $(BLOOMSZ) -i $(INDIR)
+	valgrind --leak-check=full --show-leak-kinds=all --show-reachable=yes --trace-children=yes --track-origins=yes ./$(TARGET) -m $(NUMBER) -b $(BUFFSZ) -s $(BLOOMSZ) -i $(INDIR)
 
 help:
 	@echo Options:
