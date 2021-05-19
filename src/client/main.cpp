@@ -360,10 +360,10 @@ int main(int argc, char *argv[]) {
     sa.sa_handler = &signalHandler;
     sa.sa_flags = SA_RESTART;
     sigemptyset(&sa.sa_mask);
-    sigaction(SIGINT, &sa, NULL);
-    sigaction(SIGQUIT, &sa, NULL);
-    sigaction(SIGUSR1, &sa, NULL);
-    sigaction(SIGUSR2, &sa, NULL);
+    if (sigaction(SIGINT, &sa, NULL) < 0) { perror("client/sigaction"); exit(4); }
+    if (sigaction(SIGQUIT, &sa, NULL) < 0) { perror("client/sigaction"); exit(4); }
+    if (sigaction(SIGUSR1, &sa, NULL) < 0) { perror("client/sigaction"); exit(4); }
+    if (sigaction(SIGUSR2, &sa, NULL) < 0) { perror("client/sigaction"); exit(4); }
 
     // ========== Communication installation START ==========
 

@@ -240,9 +240,9 @@ int main(int argc, char *argv[]) {
     sa.sa_handler = &signalHandler;
     sa.sa_flags = SA_RESTART;
     sigemptyset(&sa.sa_mask);
-    sigaction(SIGINT, &sa, NULL);
-    sigaction(SIGQUIT, &sa, NULL);
-    sigaction(SIGCHLD, &sa, NULL);
+    if (sigaction(SIGINT, &sa, NULL) < 0) { perror("server/sigaction"); exit(3); }
+    if (sigaction(SIGQUIT, &sa, NULL) < 0) { perror("server/sigaction"); exit(3); }
+    if (sigaction(SIGCHLD, &sa, NULL) < 0) { perror("server/sigaction"); exit(3); }
 
     // ========== Communication installation START ==========
     
