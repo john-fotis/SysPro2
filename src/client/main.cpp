@@ -492,6 +492,7 @@ int main(int argc, char *argv[]) {
                 // Update the fileList
                 for (unsigned int file = 0; file < newFileList.getSize(); file++)
                     fileList.insertAscending(*newFileList.getNode(file));
+                tempList.flush();
                 newFileList.flush();
                 break;
 
@@ -543,4 +544,5 @@ int main(int argc, char *argv[]) {
     fifoClose(fdWrite);
 
     return 0;
+    
 }
