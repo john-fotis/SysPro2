@@ -9,7 +9,7 @@ The main purpose here, is to convert the monitor application to a server-client 
 - Bash shell
 
 ## How to run:
-You can run everything, in the root path of the project, using the [Makefile](https://github.com/john-fotis/SysPro1/blob/main/Makefile). Type `make help` for all the available options. You can also run both the script and application with the appropriate make rules. All the run parameters can be changed through the [Makefile](https://github.com/john-fotis/SysPro1/blob/main/Makefile).
+You can run everything, in the root path of the project, using the [Makefile](https://github.com/john-fotis/SysPro2/blob/main/Makefile). Type `make help` for all the available options. You can also run both the script and application with the appropriate make rules. All the run parameters can be changed through the [Makefile](https://github.com/john-fotis/SysPro2/blob/main/Makefile).
 
 ## Bash-Script:
   #### You first need to produce an `input_dir` directory which contains subdirectories named after countries. Each country has a number of input record-files for the main application. For this purpose you need the [citizenRecordsFile](https://github.com/john-fotis/SysPro2/blob/main/citizenRecordsFile)
